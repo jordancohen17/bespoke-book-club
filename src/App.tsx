@@ -500,16 +500,16 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      {/* Upper header switcher */}
-      <header className="header-bar">
-        <div className="brand">
+    <div className="app-container app-layout-wrapper">
+      {/* Persistent Left Sidebar (visible on desktop, hidden on mobile) */}
+      <aside className="sidebar-panel">
+        <div className="sidebar-brand">
           <span className="brand-icon">📚</span>
           <span className="brand-title">Bespoke Reads</span>
         </div>
-        
+
         {activeUser && (
-          <div className="user-control">
+          <div className="sidebar-user-control">
             <div 
               className="avatar" 
               style={{ backgroundColor: activeUser.avatarColor }}
@@ -537,36 +537,183 @@ function App() {
             </select>
           </div>
         )}
-      </header>
 
-      {/* Profile switcher slider bar */}
-      <div className="glass-panel switch-user-card">
-        {users.map(u => (
-          <div 
-            key={u.id} 
-            className={`switch-user-item ${u.id === activeUserId ? 'active' : ''}`}
-            onClick={() => handleSwitchUser(u.id)}
+        {/* Sidebar Nav */}
+        <nav className="sidebar-nav">
+          <button 
+            className={`sidebar-nav-btn ${currentTab === 'feed' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('feed')}
           >
-            <div className="avatar" style={{ backgroundColor: u.avatarColor }}>
-              {u.name.charAt(0).toUpperCase()}
-            </div>
-            <span>{u.name.split(' ')[0]}</span>
-          </div>
-        ))}
-        <div 
-          className="switch-user-item" 
-          onClick={() => setIsAddFriendOpen(true)}
-          style={{ justifyContent: 'center' }}
-        >
-          <div className="avatar" style={{ background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.2)' }}>
-            +
-          </div>
-          <span>Add Friend</span>
-        </div>
-      </div>
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 11a9 9 0 0 1 9 9" />
+              <path d="M4 4a16 16 0 0 1 16 16" />
+              <circle cx="5" cy="19" r="1" fill="currentColor" />
+            </svg>
+            Activity
+          </button>
+          
+          <button 
+            className={`sidebar-nav-btn ${currentTab === 'shelf' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('shelf')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            Bookshelf
+          </button>
+          
+          <button 
+            className={`sidebar-nav-btn ${currentTab === 'recs' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('recs')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            Suggestions
+            {recs.filter(r => r.toUserId === activeUserId && !r.read).length > 0 && (
+              <span className="unread-badge">
+                {recs.filter(r => r.toUserId === activeUserId && !r.read).length}
+              </span>
+            )}
+          </button>
+          
+          <button 
+            className={`sidebar-nav-btn ${currentTab === 'polls' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('polls')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Polls
+          </button>
+        </nav>
 
-      {/* Main Tab Renderings */}
-      <main className="fade-in" style={{ flex: 1 }}>
+        {/* Sidebar Members Section */}
+        <div className="sidebar-members-section">
+          <div className="sidebar-section-title">Club Members</div>
+          <div className="sidebar-members-list">
+            {users.map(u => {
+              const currentReads = books.filter(b => b.addedBy === u.id && b.status === 'reading');
+              return (
+                <div 
+                  key={u.id}
+                  className={`member-list-item ${u.id === activeUserId ? 'active' : ''}`}
+                  onClick={() => handleSwitchUser(u.id)}
+                >
+                  <div className="member-avatar-wrapper">
+                    <div className="avatar" style={{ backgroundColor: u.avatarColor }}>
+                      {u.name.charAt(0).toUpperCase()}
+                    </div>
+                    {currentReads.length > 0 && (
+                      <span className="reading-badge" title={`${u.name} is currently reading ${currentReads.length} book(s)`}>📖</span>
+                    )}
+                  </div>
+                  <div className="member-info">
+                    <div className="member-name">{u.name} {u.id === activeUserId ? '(You)' : ''}</div>
+                    <div className="member-reading-list">
+                      {currentReads.length > 0 ? (
+                        currentReads.map(b => (
+                          <div key={b.id} className="member-reading-book" title={`${b.title} by ${b.author}`}>
+                            <span className="book-title-text">{b.title}</span>
+                            <span className="book-author-text">by {b.author}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="member-reading-empty">Not reading anything</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <button 
+              className="btn btn-secondary add-member-btn" 
+              onClick={() => setIsAddFriendOpen(true)}
+              style={{ width: '100%', marginTop: '0.5rem' }}
+            >
+              + Add Member
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="main-content-panel">
+        {/* Mobile Header (hidden on desktop) */}
+        <header className="mobile-header">
+          <div className="brand">
+            <span className="brand-icon">📚</span>
+            <span className="brand-title">Bespoke Reads</span>
+          </div>
+          {activeUser && (
+            <div className="user-control">
+              <div 
+                className="avatar" 
+                style={{ backgroundColor: activeUser.avatarColor }}
+              >
+                {activeUser.name.charAt(0).toUpperCase()}
+              </div>
+              <select 
+                className="user-select"
+                value={activeUserId || ''} 
+                onChange={(e) => {
+                  if (e.target.value === 'logout') {
+                    handleLogout();
+                  } else {
+                    handleSwitchUser(e.target.value);
+                  }
+                }}
+              >
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+                <option value="logout">➡️ Switch Profile / Logout</option>
+              </select>
+            </div>
+          )}
+        </header>
+
+        {/* Mobile Member Slider (hidden on desktop) */}
+        <div className="mobile-members-slider glass-panel">
+          {users.map(u => {
+            const currentReads = books.filter(b => b.addedBy === u.id && b.status === 'reading');
+            return (
+              <div 
+                key={u.id} 
+                className={`switch-user-item ${u.id === activeUserId ? 'active' : ''}`}
+                onClick={() => handleSwitchUser(u.id)}
+              >
+                <div className="avatar-wrapper">
+                  <div className="avatar" style={{ backgroundColor: u.avatarColor }}>
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  {currentReads.length > 0 && (
+                    <span className="reading-badge-mini" title={`${u.name} is currently reading ${currentReads.length} book(s)`}>📖</span>
+                  )}
+                </div>
+                <span>{u.name.split(' ')[0]}</span>
+              </div>
+            );
+          })}
+          <div 
+            className="switch-user-item" 
+            onClick={() => setIsAddFriendOpen(true)}
+            style={{ justifyContent: 'center' }}
+          >
+            <div className="avatar" style={{ background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.2)' }}>
+              +
+            </div>
+            <span>Add Friend</span>
+          </div>
+        </div>
+
+        {/* Main Tab Renderings */}
+        <main className="fade-in" style={{ flex: 1 }}>
         {currentTab === 'feed' && (
           <div>
             <div className="section-title-bar">
@@ -1429,58 +1576,59 @@ function App() {
         </div>
       )}
 
-      {/* Sticky Bottom Tab Nav */}
-      <nav className="nav-tabs">
-        <button 
-          className={`nav-tab-btn ${currentTab === 'feed' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('feed')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 11a9 9 0 0 1 9 9" />
-            <path d="M4 4a16 16 0 0 1 16 16" />
-            <circle cx="5" cy="19" r="1" fill="currentColor" />
-          </svg>
-          Activity
-        </button>
-        
-        <button 
-          className={`nav-tab-btn ${currentTab === 'shelf' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('shelf')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-          Bookshelf
-        </button>
-        
-        <button 
-          className={`nav-tab-btn ${currentTab === 'recs' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('recs')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-          Suggestions
-          {recs.filter(r => r.toUserId === activeUserId && !r.read).length > 0 && (
-            <span className="unread-badge" style={{ position: 'absolute', top: '2px', right: '15px' }}>
-              {recs.filter(r => r.toUserId === activeUserId && !r.read).length}
-            </span>
-          )}
-        </button>
-        
-        <button 
-          className={`nav-tab-btn ${currentTab === 'polls' ? 'active' : ''}`}
-          onClick={() => setCurrentTab('polls')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10" />
-            <line x1="12" y1="20" x2="12" y2="4" />
-            <line x1="6" y1="20" x2="6" y2="14" />
-          </svg>
-          Polls
-        </button>
-      </nav>
+        {/* Mobile Bottom Tab Nav */}
+        <nav className="nav-tabs mobile-only-nav">
+          <button 
+            className={`nav-tab-btn ${currentTab === 'feed' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('feed')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 11a9 9 0 0 1 9 9" />
+              <path d="M4 4a16 16 0 0 1 16 16" />
+              <circle cx="5" cy="19" r="1" fill="currentColor" />
+            </svg>
+            Activity
+          </button>
+          
+          <button 
+            className={`nav-tab-btn ${currentTab === 'shelf' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('shelf')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            Bookshelf
+          </button>
+          
+          <button 
+            className={`nav-tab-btn ${currentTab === 'recs' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('recs')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            Suggestions
+            {recs.filter(r => r.toUserId === activeUserId && !r.read).length > 0 && (
+              <span className="unread-badge" style={{ position: 'absolute', top: '2px', right: '15px' }}>
+                {recs.filter(r => r.toUserId === activeUserId && !r.read).length}
+              </span>
+            )}
+          </button>
+          
+          <button 
+            className={`nav-tab-btn ${currentTab === 'polls' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('polls')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Polls
+          </button>
+        </nav>
+      </div>
     </div>
   );
 }
