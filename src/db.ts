@@ -11,6 +11,63 @@ console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
 console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
 console.log('--------------------------');
 
+interface DbUser {
+  id: string;
+  name: string;
+  avatar_color: string;
+  created_at: string | number;
+}
+
+interface DbBook {
+  id: string;
+  title: string;
+  author: string;
+  genre: string;
+  status: 'reading' | 'tbr' | 'read';
+  rating?: number | null;
+  review?: string | null;
+  added_by: string;
+  updated_at: string | number;
+  cover_url?: string | null;
+}
+
+interface DbRecommendation {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  book_id: string;
+  note?: string;
+  timestamp: string | number;
+  read: boolean;
+}
+
+interface DbPoll {
+  id: string;
+  question: string;
+  options: string[];
+  votes?: Record<string, number>;
+  created_at: string | number;
+  is_active: boolean;
+}
+
+interface DbActivity {
+  id: string;
+  user_id: string;
+  type: 'add_book' | 'recommend' | 'vote' | 'review';
+  details: {
+    bookId?: string;
+    bookTitle?: string;
+    bookAuthor?: string;
+    toUserId?: string;
+    toUserName?: string;
+    pollQuestion?: string;
+    pollId?: string;
+    rating?: number;
+    coverUrl?: string;
+  };
+  timestamp: string | number;
+}
+
 const KEYS = {
   ACTIVE_USER_ID: 'bookclub_active_user_id',
 };
@@ -40,7 +97,7 @@ export async function getUsers(): Promise<User[]> {
     return [];
   }
 
-  return (data || []).map((u: any) => ({
+  return (data || []).map((u: DbUser) => ({
     id: u.id,
     name: u.name,
     avatarColor: u.avatar_color,
@@ -84,7 +141,7 @@ export async function getBooks(): Promise<Book[]> {
     return [];
   }
 
-  return (data || []).map((b: any) => ({
+  return (data || []).map((b: DbBook) => ({
     id: b.id,
     title: b.title,
     author: b.author,
@@ -149,7 +206,7 @@ export async function updateBook(id: string, updates: Partial<Omit<Book, 'id' | 
   const currentBook = currentBooks[0];
   const updatedAt = Date.now();
 
-  const dbUpdates: any = {
+  const dbUpdates: Record<string, string | number | null> = {
     updated_at: updatedAt,
   };
   if (updates.title !== undefined) dbUpdates.title = updates.title;
@@ -220,7 +277,7 @@ export async function getRecommendations(): Promise<Recommendation[]> {
     return [];
   }
 
-  return (data || []).map((r: any) => ({
+  return (data || []).map((r: DbRecommendation) => ({
     id: r.id,
     fromUserId: r.from_user_id,
     toUserId: r.to_user_id,
@@ -300,7 +357,7 @@ export async function getPolls(): Promise<Poll[]> {
     return [];
   }
 
-  return (data || []).map((p: any) => ({
+  return (data || []).map((p: DbPoll) => ({
     id: p.id,
     question: p.question,
     options: p.options,
@@ -393,7 +450,7 @@ export async function getActivities(): Promise<Activity[]> {
     return [];
   }
 
-  return (data || []).map((a: any) => ({
+  return (data || []).map((a: DbActivity) => ({
     id: a.id,
     userId: a.user_id,
     type: a.type as Activity['type'],

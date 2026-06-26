@@ -147,7 +147,7 @@ function App() {
         throw new Error('Failed to fetch search results from Open Library.');
       }
       const data = await response.json();
-      const results = (data.docs || []).map((doc: any) => {
+      const results = (data.docs || []).map((doc: { title: string; author_name?: string[]; subject?: string[]; cover_i?: number }) => {
         const coverId = doc.cover_i;
         return {
           title: doc.title,
@@ -160,7 +160,7 @@ function App() {
       if (results.length === 0) {
         setApiSearchError('No books found. Try different search terms.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setApiSearchError('Unable to connect to the search API. Please fill details manually.');
     } finally {
