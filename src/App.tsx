@@ -86,9 +86,6 @@ function App() {
     const fetchedActiveId = db.getActiveUserId();
     if (fetchedActiveId && fetchedUsers.some(u => u.id === fetchedActiveId)) {
       setActiveUserId(fetchedActiveId);
-    } else if (fetchedUsers.length > 0) {
-      db.setActiveUserId(fetchedUsers[0].id);
-      setActiveUserId(fetchedUsers[0].id);
     } else {
       setActiveUserId(null);
     }
@@ -115,6 +112,7 @@ function App() {
     
     const createdUser = await db.addUser(newUserName.trim(), newUserColor);
     db.setActiveUserId(createdUser.id);
+    setActiveUserId(createdUser.id);
     setNewUserName('');
     await refreshAllData();
   };
@@ -124,11 +122,21 @@ function App() {
     e.preventDefault();
     if (!friendName.trim()) return;
     
-    await db.addUser(friendName.trim(), friendColor);
+    const createdUser = await db.addUser(friendName.trim(), friendColor);
+    db.setActiveUserId(createdUser.id);
+    setActiveUserId(createdUser.id);
     setFriendName('');
     setFriendColor(AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
     setIsAddFriendOpen(false);
+    if (shelfUserIdFilter === activeUserId) {
+      setShelfUserIdFilter(createdUser.id);
+    }
     await refreshAllData();
+  };
+
+  const handleLogout = () => {
+    db.setActiveUserId(null);
+    setActiveUserId(null);
   };
 
   // API Search handler
@@ -394,6 +402,84 @@ function App() {
     );
   }
 
+  // Profile Selection / Login View
+  if (activeUserId === null) {
+    return (
+      <div className="app-container">
+        <div className="login-container">
+          <div className="login-logo">📖</div>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>Bespoke Book Club</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', textAlign: 'center' }}>Who is reading today?</p>
+          
+          <div className="profile-grid">
+            {users.map(u => (
+              <div 
+                key={u.id} 
+                className="profile-card"
+                onClick={() => handleSwitchUser(u.id)}
+              >
+                <div className="profile-avatar" style={{ backgroundColor: u.avatarColor }}>
+                  {u.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="profile-name">{u.name}</div>
+              </div>
+            ))}
+            
+            <div 
+              className="profile-card add-profile"
+              onClick={() => setIsAddFriendOpen(true)}
+            >
+              <div className="profile-avatar-placeholder">+</div>
+              <div className="profile-name">Add Member</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Add Friend Modal within Profile Selection */}
+        {isAddFriendOpen && (
+          <div className="modal-overlay">
+            <div className="glass-panel modal-content">
+              <button className="modal-close" onClick={() => setIsAddFriendOpen(false)}>×</button>
+              <h2 style={{ fontSize: '1.3rem', marginBottom: '1.25rem', fontFamily: 'var(--font-sans)' }}>Add Club Member</h2>
+              
+              <form onSubmit={handleAddFriendSubmit}>
+                <div className="input-group">
+                  <label className="input-label">Member's Name</label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="e.g. Marcus"
+                    value={friendName}
+                    onChange={(e) => setFriendName(e.target.value)}
+                    required 
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Avatar Color</label>
+                  <div className="color-picker-grid">
+                    {AVATAR_COLORS.map(color => (
+                      <div 
+                        key={color} 
+                        className={`color-option ${friendColor === color ? 'selected' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setFriendColor(color)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Add Member</button>
+                  <button type="button" onClick={() => setIsAddFriendOpen(false)} className="btn btn-secondary">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Active Poll Calculation helper
   const activePoll = polls.find(p => p.isActive);
   let totalVotes = 0;
@@ -434,13 +520,20 @@ function App() {
             <select 
               className="user-select"
               value={activeUserId || ''} 
-              onChange={(e) => handleSwitchUser(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value === 'logout') {
+                  handleLogout();
+                } else {
+                  handleSwitchUser(e.target.value);
+                }
+              }}
             >
               {users.map(u => (
                 <option key={u.id} value={u.id}>
                   {u.name} {u.id === activeUserId ? '(You)' : ''}
                 </option>
               ))}
+              <option value="logout">➡️ Switch Profile / Logout</option>
             </select>
           </div>
         )}
